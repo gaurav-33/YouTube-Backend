@@ -142,7 +142,7 @@ const loginUser = asyncHandler(async (req, res) => {
 })
 
 const logoutUser = asyncHandler(async (req, res) => {
-
+    
     await User.findByIdAndUpdate(req.user._id,
         {
             $set: {
@@ -176,17 +176,17 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
 
         const user = await User.findById(decodedToken?._id)
-        
+
         if (!user) {
             throw new ApiError(401, "Invalid refresh token.")
         }
-        
+
         if (incomingRefreshToken !== user?.refreshToken) {
             throw new ApiError(401, "Refresh token is expired or used.")
         }
-       
+
         const { accessToken, newRefreshToken } = await generateAccessAndRefreshToken(user._id)
-        
+
         const options = {
             httpOnly: true,
             secure: true
@@ -210,4 +210,29 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 })
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken }
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body
+    
+    const user = await User.findById(req?.user._id)
+    
+    const isPasswordCorrect = user.isPasswordCorrect(oldPassword)
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Invalid old password.")
+    }
+
+    user.password = newPassword
+    await user.save({ validateBeforeSave: false })
+
+    return res
+        .status(200)
+        .json(new ApiError(200, {}, "Password changed successfully."))
+})
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    changeCurrentPassword
+}
