@@ -40,7 +40,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     }
 
 
-    const aggregation = Video.aggregate([
+    const aggregation = await Video.aggregate([
         matchStage
     ])
 
